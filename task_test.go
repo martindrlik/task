@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/martindrlik/task/task"
+	"github.com/martindrlik/task"
 )
 
 func TestParseKey(t *testing.T) {
