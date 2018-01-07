@@ -67,26 +67,30 @@ func (tm *Manager) Add(time time.Time, title string) Key {
 
 // Start sets started state to task given by its key.
 func (tm *Manager) Start(time time.Time, key Key) {
+	if t, ok := tm.all[key]; ok {
+		t.Started = time
+		tm.all[key] = t
+	}
+
 	added := tm.added
 	i, ok := index(added, key)
 	if ok {
 		tm.added = append(added[:i], added[i+1:]...)
 		tm.started = append(tm.started, key)
 	}
-	t := tm.all[key]
-	t.Started = time
-	tm.all[key] = t
 }
 
 // Finish sets finished state to task given by its key.
 func (tm *Manager) Finish(time time.Time, key Key) {
+	if t, ok := tm.all[key]; ok {
+		t.Finished = time
+		tm.all[key] = t
+	}
+
 	i, ok := index(tm.started, key)
 	if ok {
 		tm.started = append(tm.started[:i], tm.started[i+1:]...)
 		tm.finished = append(tm.finished, key)
-		t := tm.all[key]
-		t.Finished = time
-		tm.all[key] = t
 		return
 	}
 	i, ok = index(tm.added, key)
@@ -94,9 +98,6 @@ func (tm *Manager) Finish(time time.Time, key Key) {
 		tm.added = append(tm.added[:i], tm.added[i+1:]...)
 		tm.finished = append(tm.finished, key)
 	}
-	t := tm.all[key]
-	t.Finished = time
-	tm.all[key] = t
 }
 
 func index(keys []Key, key Key) (int, bool) {
