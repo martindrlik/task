@@ -7,6 +7,37 @@ import (
 	"github.com/martindrlik/task/task"
 )
 
+func TestParseKey(t *testing.T) {
+	tt := []struct {
+		name      string
+		keyString string
+		keyInt    int64
+		withError bool
+	}{
+		{"parsing ff should pass", "ff", 15*36 + 15, false},
+		{"parsing č should fail", "č", 0, true},
+	}
+	for _, tc := range tt {
+		t.Run(tc.name, func(t *testing.T) {
+			k, err := task.ParseKey(tc.keyString)
+			if !tc.withError && err != nil {
+				t.Errorf("expected to pass with no error, got error %v", err)
+			}
+			keyInt := int64(k)
+			if keyInt != tc.keyInt {
+				t.Errorf("expected to parse to int value %v, got %v", tc.keyInt, keyInt)
+			}
+		})
+	}
+}
+
+func TestKeyString(t *testing.T) {
+	k := task.Key(35)
+	if ks := k.String(); ks != "z" {
+		t.Errorf("expected key int value 35 to be \"z\" string value, got %q", ks)
+	}
+}
+
 func TestTask(t *testing.T) {
 	tm := task.NewManager()
 	k := tm.Add(time.Now(), "write more unit tests")
@@ -36,6 +67,23 @@ func TestTask(t *testing.T) {
 			t.Errorf("expected no task added, got %d", len(added))
 		}
 	})
+}
+
+func TestErrNoTask(t *testing.T) {
+	tm := task.NewManager()
+	var k task.Key
+	if _, err := tm.Task(k); err != task.ErrNoTask {
+		t.Errorf("there should be no task and error %v, got %v", task.ErrNoTask, err)
+	}
+}
+
+func TestFromAddedToFinished(t *testing.T) {
+	tm := task.NewManager()
+	k := tm.Add(time.Now(), "write more unit tests")
+	tm.Finish(time.Now(), k)
+	if finished := tm.Finished(); len(finished) != 1 {
+		t.Errorf("expected one finished task, got %d", len(finished))
+	}
 }
 
 func TestAddMultiple(t *testing.T) {
@@ -74,4 +122,21 @@ func TestTime(t *testing.T) {
 	if finished != task.Finished {
 		t.Errorf("expected finished time to be %v, got %v", finished, task.Finished)
 	}
+}
+
+func TestMust(t *testing.T) {
+	defer func() {
+		switch x := recover().(type) {
+		case error:
+			if errorString := x.Error(); errorString != task.ErrNoTask.Error() {
+				t.Errorf("expected panic with error to be %v, got %v", task.ErrNoTask, errorString)
+			}
+		default:
+			t.Errorf("expected panic with error %v, got %T %v", task.ErrNoTask, x, x)
+		}
+	}()
+	tm := task.NewManager()
+	var k task.Key
+	task.Must(tm.Task(k))
+	t.Errorf("expected panic if there is no task for given key")
 }

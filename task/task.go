@@ -143,11 +143,3 @@ func Must(t Task, err error) Task {
 	}
 	return t
 }
-
-func (tm *Manager) tasks(keys []Key) []Task {
-	tasks := make([]Task, len(keys))
-	for i, key := range keys {
-		tasks[i] = tm.all[key]
-	}
-	return tasks
-}
